@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>CivicEvents+ Frontend</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jQuery CDN -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Heroicons (for icons via SVG paths) -->
+    <script
+      src="https://unpkg.com/feather-icons@4.29.2/dist/feather.min.js"
+      defer
+    ></script>
+    <style>
+      /* Tailwind config overrides */
+      :root {
+        color-scheme: light dark;
+      }
+      .scrollbar-thin::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      .scrollbar-thin::-webkit-scrollbar-thumb {
+        background-color: rgba(148, 163, 184, 0.8);
+        border-radius: 999px;
+      }
+      .scrollbar-thin::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .skip-link {
+        position: absolute;
+        top: -40px;
+        left: 1rem;
+        padding: 0.5rem 1rem;
+        background: #312e81;
+        color: #fff;
+        border-radius: 999px;
+        z-index: 50;
+        transition: top 0.15s ease;
+      }
+      .skip-link:focus {
+        top: 1rem;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.6);
+      }
+      #global-loading-bar {
+        transform: scaleX(0);
+        transform-origin: left center;
+      }
+      .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
+    <a href="#view-container" class="skip-link">Skip to main content</a>
+    <div
+      id="global-loading-bar"
+      class="fixed top-0 left-0 w-full h-0.5 bg-indigo-500 transition-transform duration-200 ease-out z-50"
+      aria-hidden="true"
+    ></div>
+    <!-- Toast container -->
+    <div
+      id="toast-container"
+      class="fixed inset-0 pointer-events-none flex flex-col items-end gap-2 p-4 z-50"
+      aria-live="assertive"
+      aria-atomic="true"
+    ></div>
+    <div
+      id="offline-banner"
+      class="hidden bg-amber-100 text-amber-800 text-xs font-medium text-center py-2"
+      role="status"
+      aria-live="polite"
+    >
+      You are offline. Changes will re-sync when connection is restored.
+    </div>
+
+    <!-- Global app container -->
+    <div id="app-root" class="flex-1 flex flex-col">
+      <!-- Top navigation bar -->
+      <header
+        class="border-b border-slate-200 bg-white/80 backdrop-blur sticky top-0 z-40"
+      >
+        <div
+          class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-4 justify-between"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="h-9 w-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg"
+              aria-hidden="true"
+            >
+              CE
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-slate-900 text-lg"
+                  >CivicEvents+</span
+                >
+                <span
+                  class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-medium border border-emerald-100"
+                  >Beta</span
+                >
+              </div>
+              <p class="text-xs text-slate-500">
+                Community events, promos & civic engagement hub
+              </p>
+            </div>
+          </div>
+
+          <!-- Global search -->
+          <div
+            class="hidden md:flex items-center flex-1 max-w-md mx-4 bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5 focus-within:ring-2 focus-within:ring-indigo-500 relative"
+          >
+            <span
+              class="text-slate-400 mr-2"
+              data-feather="search"
+              aria-hidden="true"
+            ></span>
+            <input
+              id="global-search-input"
+              type="search"
+              class="bg-transparent outline-none w-full text-sm"
+              placeholder="Search events, announcements, promos..."
+              aria-label="Global search"
+            />
+          </div>
+
+          <!-- Right side actions -->
+          <div class="flex items-center gap-4">
+            <!-- Notifications bell -->
+            <button
+              id="notifications-bell"
+              class="relative p-2 rounded-full hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              aria-label="Notifications"
+            >
+              <span
+                class="text-slate-600"
+                data-feather="bell"
+                aria-hidden="true"
+              ></span>
+              <span
+                id="notifications-count-badge"
+                class="hidden absolute -top-0.5 -right-0.5 inline-flex items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white px-1.5 py-0.5"
+              ></span>
+            </button>
+
+            <!-- Primary navigation -->
+            <nav
+              class="hidden md:flex items-center gap-3 text-sm font-medium text-slate-600"
+              aria-label="Primary"
+            >
+              <button
+                data-nav="events"
+                class="nav-link px-3 py-1.5 rounded-full hover:bg-slate-100"
+              >
+                Events
+              </button>
+              <button
+                data-nav="announcements"
+                class="nav-link px-3 py-1.5 rounded-full hover:bg-slate-100"
+              >
+                Announcements
+              </button>
+              <button
+                data-nav="promos"
+                class="nav-link px-3 py-1.5 rounded-full hover:bg-slate-100"
+              >
+                Promos
+              </button>
+              <button
+                data-nav="service-requests"
+                class="nav-link px-3 py-1.5 rounded-full hover:bg-slate-100"
+              >
+                Services
+              </button>
+              <button
+                data-nav="my-registrations"
+                class="nav-link px-3 py-1.5 rounded-full hover:bg-slate-100"
+              >
+                My Events
+              </button>
+              <button
+                data-nav="admin-dashboard"
+                class="nav-link admin-only hidden px-3 py-1.5 rounded-full hover:bg-slate-100"
+              >
+                Dashboard
+              </button>
+              <button
+                data-nav="admin-panel"
+                class="nav-link admin-only hidden px-3 py-1.5 rounded-full hover:bg-slate-100"
+              >
+                Admin
+              </button>
+            </nav>
+
+            <!-- Profile dropdown -->
+            <div class="relative">
+              <button
+                id="profile-menu-button"
+                class="flex items-center gap-2 px-2 py-1.5 rounded-full hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
+                <div
+                  class="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold"
+                  aria-hidden="true"
+                  id="profile-avatar"
+                >
+                  ?
+                </div>
+                <div class="hidden sm:flex flex-col items-start">
+                  <span
+                    id="profile-name"
+                    class="text-xs font-semibold text-slate-900"
+                  ></span>
+                  <span
+                    id="profile-role"
+                    class="text-[11px] text-slate-500 capitalize"
+                  ></span>
+                </div>
+                <span
+                  class="text-slate-500"
+                  data-feather="chevron-down"
+                  aria-hidden="true"
+                ></span>
+              </button>
+              <div
+                id="profile-menu"
+                class="hidden absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-slate-100 py-1 text-sm z-50"
+                role="menu"
+                aria-label="Profile"
+              >
+                <button
+                  data-nav="profile"
+                  class="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2"
+                  role="menuitem"
+                >
+                  <span
+                    data-feather="user"
+                    class="w-4 h-4 text-slate-500"
+                  ></span>
+                  My profile
+                </button>
+                <button
+                  id="logout-button"
+                  class="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-rose-600"
+                  role="menuitem"
+                >
+                  <span
+                    data-feather="log-out"
+                    class="w-4 h-4"
+                  ></span>
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Auth pages (shown when not logged in) -->
+      <main id="auth-pages" class="flex-1 flex">
+        <!-- Login -->
+        <section
+          id="login-view"
+          class="flex-1 flex items-center justify-center px-4 py-8"
+        >
+          <div
+            class="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-6"
+          >
+            <div>
+              <h1 class="text-xl font-semibold text-slate-900">
+                Welcome back
+              </h1>
+              <p class="text-sm text-slate-500 mt-1">
+                Sign in to manage your civic events and stay informed.
+              </p>
+              <p
+                id="login-success-message"
+                class="hidden text-xs text-emerald-600 mt-2"
+              ></p>
+            </div>
+            <form id="login-form" class="space-y-4" novalidate>
+              <div class="space-y-1.5">
+                <label
+                  for="login-email"
+                  class="text-xs font-medium text-slate-700"
+                  >Email</label
+                >
+                <input
+                  id="login-email"
+                  type="email"
+                  required
+                  autocomplete="email"
+                  class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+              <div class="space-y-1.5">
+                <label
+                  for="login-password"
+                  class="text-xs font-medium text-slate-700"
+                  >Password</label
+                >
+                <input
+                  id="login-password"
+                  type="password"
+                  required
+                  autocomplete="current-password"
+                  class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+              <div class="flex items-center justify-between">
+                <label class="flex items-center gap-2 text-xs text-slate-600">
+                  <input
+                    id="login-remember"
+                    type="checkbox"
+                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span>Keep me signed in on this device</span>
+                </label>
+              </div>
+              <button
+                type="submit"
+                class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 text-white text-sm font-medium px-4 py-2.5 hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-60"
+              >
+                <span
+                  id="login-button-spinner"
+                  class="hidden h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+                  aria-hidden="true"
+                ></span>
+                <span>Sign in</span>
+              </button>
+            </form>
+            <p class="text-xs text-slate-500 text-center">
+              Don't have an account?
+              <button
+                id="go-to-signup"
+                class="text-indigo-600 font-medium hover:underline"
+              >
+                Create one
+              </button>
+            </p>
+          </div>
+        </section>
+
+        <!-- Signup -->
+        <section
+          id="signup-view"
+          class="hidden flex-1 items-center justify-center px-4 py-8"
+        >
+          <div
+            class="w-full max-w-xl bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-6"
+          >
+            <div>
+              <h1 class="text-xl font-semibold text-slate-900">
+                Join CivicEvents+
+              </h1>
+              <p class="text-sm text-slate-500 mt-1">
+                Create an account to register for events, leave feedback and
+                receive civic updates.
+              </p>
+            </div>
+            <form id="signup-form" class="space-y-4" novalidate>
+              <div class="grid grid-cols-1 gap-4">
+                <div class="space-y-1.5">
+                  <label
+                    for="signup-full-name"
+                    class="text-xs font-medium text-slate-700"
+                    >Full name</label
+                  >
+                  <input
+                    id="signup-full-name"
+                    type="text"
+                    required
+                    autocomplete="name"
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label
+                    for="signup-email"
+                    class="text-xs font-medium text-slate-700"
+                    >Email</label
+                  >
+                  <input
+                    id="signup-email"
+                    type="email"
+                    required
+                    autocomplete="email"
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                <div class="space-y-1.5">
+                  <label
+                    for="signup-password"
+                    class="text-xs font-medium text-slate-700 flex items-center justify-between"
+                  >
+                    <span>Password</span>
+                    <span class="text-[11px] text-slate-400"
+                      >Min 8 chars, mixed case, number & symbol</span
+                    >
+                  </label>
+                  <input
+                    id="signup-password"
+                    type="password"
+                    required
+                    autocomplete="new-password"
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <!-- Password strength meter -->
+                  <div class="mt-2 space-y-1">
+                    <div
+                      aria-hidden="true"
+                      class="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden"
+                    >
+                      <div
+                        id="password-strength-bar"
+                        class="h-full w-0 bg-rose-500 transition-all duration-200"
+                      ></div>
+                    </div>
+                    <p
+                      id="password-strength-label"
+                      class="text-[11px] text-slate-500"
+                    >
+                      Strength: too weak
+                    </p>
+                  </div>
+                </div>
+                <div class="space-y-1.5">
+                  <label
+                    for="signup-confirm-password"
+                    class="text-xs font-medium text-slate-700"
+                    >Confirm password</label
+                  >
+                  <input
+                    id="signup-confirm-password"
+                    type="password"
+                    required
+                    autocomplete="new-password"
+                    class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 text-white text-sm font-medium px-4 py-2.5 hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-60"
+              >
+                <span
+                  id="signup-button-spinner"
+                  class="hidden h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+                  aria-hidden="true"
+                ></span>
+                <span>Create account</span>
+              </button>
+            </form>
+            <p class="text-xs text-slate-500 text-center">
+              Already have an account?
+              <button
+                id="go-to-login"
+                class="text-indigo-600 font-medium hover:underline"
+              >
+                Sign in instead
+              </button>
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <!-- App shell (shown when logged in) -->
+      <main
+        id="app-shell"
+        class="hidden flex-1 max-w-6xl mx-auto w-full px-4 py-6 md:py-8"
+      >
+        <div class="flex flex-col md:flex-row gap-6 w-full">
+          <!-- Admin sidebar -->
+          <aside
+            id="admin-sidebar"
+            class="hidden md:block md:w-60 flex-shrink-0"
+            aria-label="Admin navigation"
+          >
+            <div
+              class="sticky top-[76px] bg-white border border-slate-100 rounded-2xl shadow-sm p-3 space-y-2"
+            >
+              <p
+                class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide px-2"
+              >
+                Admin
+              </p>
+              <button
+                data-nav="admin-dashboard"
+                class="admin-only nav-link w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-slate-600 hover:bg-slate-50"
+              >
+                <span
+                  data-feather="activity"
+                  class="w-4 h-4 text-indigo-500"
+                ></span>
+                Dashboard
+              </button>
+              <button
+                data-nav="admin-events"
+                class="admin-only nav-link w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-slate-600 hover:bg-slate-50"
+              >
+                <span data-feather="calendar" class="w-4 h-4"></span>
+                Manage events
+              </button>
+              <button
+                data-nav="admin-announcements"
+                class="admin-only nav-link w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-slate-600 hover:bg-slate-50"
+              >
+                <span data-feather="mic" class="w-4 h-4"></span>
+                Audio announcements
+              </button>
+              <button
+                data-nav="admin-promos"
+                class="admin-only nav-link w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-slate-600 hover:bg-slate-50"
+              >
+                <span data-feather="film" class="w-4 h-4"></span>
+                Video promos
+              </button>
+              <button
+                data-nav="admin-notifications"
+                class="admin-only nav-link w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-slate-600 hover:bg-slate-50"
+              >
+                <span data-feather="bell" class="w-4 h-4"></span>
+                Broadcast notifications
+              </button>
+              <button
+                data-nav="admin-users"
+                class="admin-only nav-link w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-slate-600 hover:bg-slate-50"
+              >
+                <span data-feather="users" class="w-4 h-4"></span>
+                Users
+              </button>
+            </div>
+          </aside>
+
+          <!-- Main content area -->
+          <section
+            id="view-container"
+            class="flex-1 space-y-4 min-w-0"
+            aria-live="polite"
+          >
+            <!-- Views will be injected here by JS -->
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- Notifications drawer -->
+    <aside
+      id="notifications-drawer"
+      class="fixed inset-y-0 right-0 w-full max-w-sm bg-white border-l border-slate-200 shadow-xl transform translate-x-full transition-transform duration-200 ease-out z-40 flex flex-col"
+      aria-hidden="true"
+      aria-label="Notifications drawer"
+    >
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-900">
+            Notifications
+          </h2>
+          <p class="text-xs text-slate-500">
+            Broadcast and personal updates.
+          </p>
+        </div>
+        <button
+          id="close-notifications-drawer"
+          class="p-1.5 rounded-full hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          aria-label="Close notifications drawer"
+        >
+          <span data-feather="x" class="w-4 h-4 text-slate-500"></span>
+        </button>
+      </div>
+      <div
+        id="notifications-list"
+        class="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin"
+      ></div>
+      <div class="px-4 py-3 border-t border-slate-100 text-right">
+        <button
+          data-nav="notifications-inbox"
+          class="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+        >
+          Open full inbox
+        </button>
+      </div>
+    </aside>
+
+    <!-- Global modal container (used for forms/details) -->
+    <div
+      id="modal-backdrop"
+      class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center z-40"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+    >
+      <div
+        id="modal-panel"
+        class="bg-white rounded-2xl shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto scrollbar-thin"
+      >
+        <!-- Modal content injected via JS -->
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer
+      class="border-t border-slate-200 bg-white mt-6"
+      aria-label="Site footer"
+    >
+      <div
+        class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500"
+      >
+        <p>
+          &copy; <span id="footer-year"></span> CivicEvents+. Built for civic
+          engagement and community participation.
+        </p>
+        <div class="flex items-center gap-4">
+          <a href="#" class="hover:text-slate-700">Contact & support</a>
+          <a href="#" class="hover:text-slate-700">Accessibility</a>
+          <a href="#" class="hover:text-slate-700">Privacy</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- App scripts -->
+    <script src="./js/api.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/search.js"></script>
+    <script src="./js/router.js"></script>
+    <script src="./js/views/events.js"></script>
+    <script src="./js/views/announcements.js"></script>
+    <script src="./js/views/promos.js"></script>
+    <script src="./js/views/notifications.js"></script>
+    <script src="./js/views/dashboard.js"></script>
+    <script src="./js/views/profile.js"></script>
+    <script src="./js/views/registrations.js"></script>
+    <script src="./js/views/service-requests.js"></script>
+    <script src="./js/views/admin.events.js"></script>
+    <script src="./js/views/admin.media.js"></script>
+    <script src="./js/views/admin.notifications.js"></script>
+    <script src="./js/views/admin.users.js"></script>
+    <script src="./js/main.js"></script>
+  </body>
+</html>
+
+

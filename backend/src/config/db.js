@@ -22,6 +22,12 @@ pool.connect()
     })
     .catch(err => {
         console.error('PostgreSQL connection error:', err.stack);
+        process.exit(1);
     });
+
+// Handle pool errors
+pool.on('error', (err) => {
+    console.error('Unexpected error on idle client', err);
+});
 
 export default pool;

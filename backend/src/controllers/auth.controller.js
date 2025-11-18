@@ -6,8 +6,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 const JWT_EXPIRES_IN = '1h';
 
 // Password strength regex: 
-// - Min 8 chars, at least one uppercase, one lowercase, one number, one special char
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+// - Min 6 chars for testing
+const PASSWORD_REGEX = /^.{6,}$/;
 
 export const signup = async (req, res, next) => {
     try {

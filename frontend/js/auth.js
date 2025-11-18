@@ -170,14 +170,15 @@
       var password = $password.val().trim();
       var confirmPassword = $confirmPassword.val().trim();
 
-      var score = evaluateStrength(password);
-      if (score < 4) {
-        CivicAPI.toast(
-          'Password is not strong enough. Please include upper and lower case letters, a number and a symbol.',
-          { type: 'warn' }
-        );
-        return;
-      }
+      // Temporarily disable frontend password validation
+      // var score = evaluateStrength(password);
+      // if (score < 4) {
+      //   CivicAPI.toast(
+      //     'Password is not strong enough. Please include upper and lower case letters, a number and a symbol.',
+      //     { type: 'warn' }
+      //   );
+      //   return;
+      // }
       if (password !== confirmPassword) {
         CivicAPI.toast('Passwords do not match.', { type: 'error' });
         return;

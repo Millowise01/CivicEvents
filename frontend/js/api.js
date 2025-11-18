@@ -119,6 +119,7 @@
       url = API_BASE_URL.replace(/\/+$/, '') + '/' + url.replace(/^\/+/, '');
     }
 
+
     startGlobalLoading();
 
     var ajaxOptions = $.extend(

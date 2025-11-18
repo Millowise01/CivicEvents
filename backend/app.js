@@ -16,7 +16,15 @@ app.use(express.urlencoded({ extended: true }));
 // static uploads
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
+// serve frontend static files
+app.use(express.static(path.join(process.cwd(), '../frontend')));
+
 app.use('/api', routes);
+
+// Test endpoint after routes
+app.get('/test', (req, res) => {
+    res.json({ message: 'Server is working', timestamp: new Date().toISOString() });
+});
 app.get('/health', (req, res) => res.json({ ok: true, env: process.env.NODE_ENV || 'development' }));
 app.use(errorHandler);
 

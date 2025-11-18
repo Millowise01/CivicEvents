@@ -3,7 +3,13 @@
  * Should be the last middleware added in app.js
  */
 const errorHandler = (err, req, res, next) => {
-    console.error(err); // Log the error for debugging
+    console.error('Error occurred:', {
+        message: err.message,
+        stack: err.stack,
+        url: req.url,
+        method: req.method,
+        body: req.body
+    });
 
     // Default to 500 Internal Server Error
     let status = err.status || 500;

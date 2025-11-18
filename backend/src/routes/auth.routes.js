@@ -5,7 +5,7 @@ import validateBody from '../middlewares/validateBody.middleware.js';
 
 const router = express.Router();
 
-console.log('Auth routes loaded');
+
 
 // Signup with validation
 router.post(
@@ -19,7 +19,7 @@ router.post(
     controller.signup
 );
 
-console.log('Auth signup route registered');
+
 
 // Login with validation
 router.post(

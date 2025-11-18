@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Connection Test</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+    <h1>CivicEvents+ Connection Test</h1>
+    
+    <div id="results"></div>
+    
+    <h2>Test Signup</h2>
+    <form id="test-form">
+        <input type="text" id="name" placeholder="Full Name" required><br><br>
+        <input type="email" id="email" placeholder="Email" required><br><br>
+        <input type="password" id="password" placeholder="Password" required><br><br>
+        <button type="submit">Test Signup</button>
+    </form>
+
+    <script>
+        function log(message) {
+            $('#results').append('<p>' + message + '</p>');
+        }
+
+        // Test 1: Ping test server
+        $.get('http://localhost:4001/test/ping')
+            .done(function(data) {
+                log('✓ Test server ping: ' + data.message);
+            })
+            .fail(function() {
+                log('✗ Test server ping failed');
+            });
+
+        // Test 2: Database connection
+        $.get('http://localhost:4001/test/db')
+            .done(function(data) {
+                log('✓ Database connection: ' + data.message);
+            })
+            .fail(function() {
+                log('✗ Database connection failed');
+            });
+
+        // Test 3: Main server ping
+        $.get('http://localhost:4000/test')
+            .done(function(data) {
+                log('✓ Main server ping: ' + data.message);
+            })
+            .fail(function() {
+                log('✗ Main server ping failed');
+            });
+
+        // Test 4: Signup form
+        $('#test-form').on('submit', function(e) {
+            e.preventDefault();
+            
+            const data = {
+                full_name: $('#name').val(),
+                email: $('#email').val(),
+                password: $('#password').val()
+            };
+
+            // Test with test server
+            $.ajax({
+                url: 'http://localhost:4001/test/signup',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data)
+            })
+            .done(function(response) {
+                log('✓ Test server signup: ' + response.message);
+                
+                // Now test with main server
+                $.ajax({
+                    url: 'http://localhost:4000/api/auth/signup',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data)
+                })
+                .done(function(response) {
+                    log('✓ Main server signup: ' + response.message);
+                })
+                .fail(function(xhr) {
+                    log('✗ Main server signup failed: ' + (xhr.responseJSON?.message || xhr.statusText));
+                });
+            })
+            .fail(function(xhr) {
+                log('✗ Test server signup failed: ' + (xhr.responseJSON?.message || xhr.statusText));
+            });
+        });
+    </script>
+</body>
+</html>

@@ -21,10 +21,7 @@ const server = app.listen(PORT, () => {
     console.log('Server is running and waiting for requests...');
 });
 
-// Keep the process alive
-setInterval(() => {
-    // This prevents the process from exiting
-}, 1000);
+
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
